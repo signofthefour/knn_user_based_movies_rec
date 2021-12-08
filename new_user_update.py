@@ -33,7 +33,8 @@ def compute_dist(a, b, mode="item_based"):
 def get_similar_user(new_user, user_dict, K):
     distance = []
     for user in user_dict:
-        dist = compute_dist(new_user, user_dict[user], "user_based")
+        if user == new_user: continue
+        dist = compute_dist(user_dict[new_user], user_dict[user], "user_based")
         distance.append((user, dist))
     distance.sort(key=operator.itemgetter(1))
     neighbors = [dist[0] for dist in distance[0:K]]
@@ -58,12 +59,12 @@ def get_high_rated_by_user(df_ratings):
     return high_rate_per_user_dict
 
 
-def update_user(user_dict, high_rate_per_user_dict, user, K=10):
+def update_user(user_dict, high_rate_per_user_dict, user_id, K=10):
 
-    neighbors = get_similar_user(user, user_dict, K)
+    neighbors = get_similar_user(user_id, user_dict, K)
     temp = []
     for neighbor in neighbors:
-        temp.append((user, neighbor))
+        temp.append((user_id, neighbor))
 
     fs = []
     for neighbor in [d[1] for d in temp]:
@@ -71,12 +72,12 @@ def update_user(user_dict, high_rate_per_user_dict, user, K=10):
   
     rate = Counter(fs) # counts the elements' frequency
     sorted_rate = dict(sorted(rate.items(), key=lambda item: item[1])[::-1])
-    res = [(user[0], movie_id) for movie_id in list(sorted_rate.keys())[:40]]
+    res = [(user_id, movie_id) for movie_id in list(sorted_rate.keys())[:40]]
 
     return res 
 
 
-def new_user(user_id, age, occupation, gender, zip_code):
+def data_initialize( ):
 
     cursor, db_connection = get_cursor()
     print("Loading tables...")
@@ -179,11 +180,17 @@ def new_user(user_id, age, occupation, gender, zip_code):
         else:
             high_rate_per_user_dict[user_id] += [movie_id]
 
-    print(len(high_rate_per_user_dict))
+    #print(len(high_rate_per_user_dict))
 
-    age = (max_age-age)/(max_age-min_age)
-    occupation = (max_occupation - occupation)/(max_occupation-min_occupation)
-    gender = int(gender != 'F')
-    new_user = (user_id, gender, occupation, age, zip_code)
-    res = update_user(user_dict, high_rate_per_user_dict, new_user)
+    #age = (max_age-age)/(max_age-min_age)
+    #occupation = (max_occupation - occupation)/(max_occupation-min_occupation)
+    #gender = int(gender != 'F')
+    #new_user = (user_id, gender, occupation, age, zip_code)
+    return user_dict, high_rate_per_user_dict
+
+def new_user(new_user_id, user_dict, high_rate_per_user_dict):
+    print(user_dict[new_user_id])
+    if user_dict == None:
+        print("WRONG IN SOMETHING")
+    res = update_user(user_dict, high_rate_per_user_dict, new_user_id)
     return res
